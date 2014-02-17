@@ -1,45 +1,46 @@
 require 'csv'
+require 'set'
 require 'smarter_csv'
-
-#csv_fname = 'sampleCSV.csv'
-
-#using mode - wb de
-=begin
-csvwrite = CSV.open("testCSV.csv", "wb")
-
+header_length = 0
 CSV.foreach("sampleCSV.csv") do |row|
-	puts "\n This is a new row"
-	puts row
-	csvwrite << row
-end
-#end
-header_row = false;
-columns = 0;
-begin
-	CSV.foreach("sampleCSV.csv") do |row|
-		if(header_row == false)
-			columns = row.length
-			header_row = true
-		else
-			if(columns != row.length)
-				puts "given CSV file isn't square\n"
-				puts "#{row}\n"
-				puts "there are #{row.length} columns in this row"
-			end
-		end
+	if(header_length == 0)
+		header_length = row.length
 	end
-rescue Exception => e
-		puts e
+	break
+end
+puts header_length
+for i in 0..header_length
+	headers[i] = Set.new
 end
 
-puts columns
+total_chunks = SmarterCSV.process('sampleCSV.csv', {:chunk_size => 2, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
+	chunk.each do |row|
+		row.each do |k,v|
+			puts "#{k} => #{v}"
+		end
+		puts "#{row}\n\n"
+	end
+end
+
+test = Set.new
+arr = Array["hello", "hi", 1, 2]
+test.merge(arr)
+puts test.to_a
+
+=begin
+a = Array.new
+test_smart_csv.each do |test|
+	puts test
+		test.each do |k,v|
+			puts "#{k} => #{v}"
+
+		end
+end
+nums = Array["hi","hello",3,5,6]
+nums2 = Array[5,"hi"]
+
+
+year = test_smart_csv.map { |x| x[:year] }.uniq
+puts year
+puts test_smart_csv.uniq
 =end
-test_smart_csv = SmarterCSV.process('sampleCSV.csv')
-puts test_smart_csv[0][:year]
-puts "hello world".object_id
-puts "hello world".object_id
-puts :"hello world".object_id
-puts :"hello world".object_id
-puts Symbol.all_symbols.inspect
-
-
