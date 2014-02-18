@@ -6,16 +6,30 @@ no_of_rows = 0
 CSV.foreach("sampleCSV.csv") do |row|
 	if(no_of_columns == 0)
 		no_of_columns = row.length
+		puts row
 	end
 	break
 end
-puts no_of_columns
+
+def get_datatype(field)
+	if(Integer(field) rescue false)
+		return "int"
+	elsif(Float(field) rescue false)
+		return "float"
+	elsif(Date.parse(field) rescue false)
+		puts field
+		return "date"
+	else
+		return "string"
+	end
+end
 
 headers = Array.new
 get_keys = false
 arr_unique = Array.new{hash.new}
-
-total_chunks = SmarterCSV.process('sampleCSV.csv', {:chunk_size => 2, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
+#hash_datatype = {"int" => 0, "float" => 0, "date" => 0, "string" => 0}
+arr_details = Array.new(no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "string" => 0}}
+total_chunks = SmarterCSV.process('sampleCSV.csv', {:chunk_size => 200, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
 	#puts chunk
 	if(get_keys == false)
 		chunk.each do |row|	
@@ -25,24 +39,29 @@ total_chunks = SmarterCSV.process('sampleCSV.csv', {:chunk_size => 2, :remove_em
 			break
 		end
 	end
-=begin
-		row.each do |k,v|
-			puts "#{k} => #{v}"
-=end	
-		for i in 0..headers.length-1
-			arr = chunk.map{|x| x[headers[i].to_sym]}.uniq
-			#puts arr
-			if(arr_unique[i].to_a.empty?)
-				arr_unique[i] = arr
-			else
-				arr_unique[i] |= arr
+	for i in 0..headers.length-1
+		arr = chunk.map{|x| x[headers[i].to_sym]}
+		if(arr_unique[i].to_a.empty?)
+			arr_unique[i] = arr
+			#arr_details.push(hash_datatype)
+			arr.each do |field|
+				field_type = get_datatype(field)
+				count = arr_details[i][field_type]
+				arr_details[i][field_type] = count+1
 			end
-			#hash = Hash[a]
+		else
+			arr_unique[i] |= arr
+			arr.each do |field|
+				field_type = get_datatype(field)
+				count = arr_details[i][field_type]
+				arr_details[i][field_type] = count+1
+			end
 		end
-		puts "\n Priting the unique array\n"
-		puts arr_unique
+	end
 end
 
+puts arr_details
+puts hash_datatype
 =begin
 test = Set.new
 arr = {"hello"=>0, "hi"=>1}
