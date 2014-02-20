@@ -61,7 +61,6 @@ total_chunks = SmarterCSV.process('sampleCSV.csv', {:chunk_size => 200, :remove_
 end
 
 puts arr_details
-puts hash_datatype
 =begin
 test = Set.new
 arr = {"hello"=>0, "hi"=>1}
