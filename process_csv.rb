@@ -23,7 +23,11 @@ class ProcessCSV
 		elsif(Float(field) rescue false)
 			return "float"
 		elsif(Date.parse(field) rescue false)
-			return "date"
+			if(field =~ /[a-z][0-9]/)
+				return "string"
+			else
+				return "date"
+			end
 		else
 			return "string"
 		end
@@ -100,7 +104,7 @@ class ProcessCSV
 		puts "\n\n\n"
 	end
 #Function to process the csv file and display processed data
-	def process_csv_file(filename)
+	def process_csv_file(filename, no_of_unique)
 		@arr_unique = Array.new{hash.new}
 		@arr_details = Array.new(@no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "string" => 0, "max_value" => 0, "min_value" => 0}}
 		total_chunks = SmarterCSV.process(filename, {:chunk_size => 200, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
@@ -108,40 +112,51 @@ class ProcessCSV
 				arr = chunk.map{|x| x[@headers[i].to_sym]}
 				if(@arr_unique[i].to_a.empty?)
 					@arr_unique[i] = arr.uniq
-					arr.each do |field|
-						field_type = get_datatype(field)
-						count = @arr_details[i][field_type]
-						@arr_details[i][field_type] = count+1
+				elsif(@arr_unique[i].size < no_of_unique.to_i)
+					@arr_unique[i] |= arr.uniq
+				end
+				
+				arr.each do |field|
+					field_type = get_datatype(field)
+					count = @arr_details[i][field_type]
+					@arr_details[i][field_type] = count+1
+					if(field != nil)
 						if(@header_datatype[i] == "int" || @header_datatype[i] == "float")
+							
 							if(@arr_details[i]["max_value"] < field)
 								@arr_details[i]["max_value"] = field
-							elsif(@header_datatype[i] == "date")
-								
-
-					end
-				else
-					@arr_unique[i] |= arr.uniq
-					arr.each do |field|
-						field_type = get_datatype(field)
-						count = @arr_details[i][field_type]
-						@arr_details[i][field_type] = count+1
+							end
+							if(@arr_details[i]["min_value"] > field || @arr_details[i]["min_value"] == 0)
+								@arr_details[i]["min_value"] = field
+							end
+						else
+							if(@arr_details[i]["max_value"] < field.to_s.length)
+								@arr_details[i]["max_value"] = field.to_s.length
+							end
+							if(@arr_details[i]["min_value"] > field.to_s.length ||  @arr_details[i]["min_value"] == 0)
+								@arr_details[i]["min_value"] = field.to_s.length
+							end
+						end
 					end
 				end
 			end
 		end
+		puts @arr_unique
+		puts "\n\n"
 		return @arr_details	
 	end
 end
 
 filename = ARGV[0]
 chunk_size = ARGV[1]
+no_of_unique = ARGV[2]
 #check if the file exists
 if File::exists?(filename)
 	csv_process = ProcessCSV.new
 	csv_process.clean_line_endings(filename)
 	csv_process.get_header_length(filename)
 	csv_process.initial_data_type(filename,chunk_size)
-	array_details = csv_process.process_csv_file(filename)
+	array_details = csv_process.process_csv_file(filename, no_of_unique)
 	puts array_details
 else
 	puts "invalid filename"
