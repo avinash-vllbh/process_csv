@@ -23,10 +23,13 @@ class ProcessCSV
 		elsif(Float(field) rescue false)
 			return "float"
 		elsif(Date.parse(field) rescue false)
-			if(field =~ /[a-z][0-9]/)
-				return "string"
-			else
+			pattern1 = field.scan(/[0-9]\//)
+			pattern2 = field.scan(/[0-9]\-/)
+			pattern3 = field.scan(/[0-9] [A-Z][a-z][a-z] [0-9]|[0-9]-[A-Z][a-z][a-z]-[0-9]|[0-9] [a-z][a-z][a-z] [0-9]|[0-9]-[a-z][a-z][a-z]-[0-9]/)
+			if(pattern1.size == 2||pattern2.size == 2||pattern3.size != 0)
 				return "date"
+			else
+				return "string"
 			end
 		else
 			return "string"
@@ -46,7 +49,7 @@ class ProcessCSV
 				end
 			end
 		end
-		puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
+		#puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
 	end
 #To guess the data types based on a small chunk
 	def initial_data_type(filename,chunk)
@@ -98,10 +101,10 @@ class ProcessCSV
 			end
 			@header_datatype.push(max_value_key)
 		end
-		puts @header_datatype
-		puts "\n\n\n"
-		puts @arr_details
-		puts "\n\n\n"
+		#puts @header_datatype
+		#puts "\n\n\n"
+		#puts @arr_details
+		#puts "\n\n\n"
 	end
 #Function to process the csv file and display processed data
 	def process_csv_file(filename, no_of_unique)
@@ -112,10 +115,19 @@ class ProcessCSV
 				arr = chunk.map{|x| x[@headers[i].to_sym]}
 				if(@arr_unique[i].to_a.empty?)
 					@arr_unique[i] = arr.uniq
-				elsif(@arr_unique[i].size < no_of_unique.to_i)
+				elsif(@arr_unique[i].size < no_of_unique.to_i+2)
 					@arr_unique[i] |= arr.uniq
-				end
-				
+				elsif (arr.uniq.include?(nil) && !@arr_unique[i].include?(nil))
+					@arr_unique[i].push(nil)
+				elsif (arr.uniq.include?("NULL") && !@arr_unique[i].include?("NULL"))
+					@arr_unique[i].push("NULL")
+				elsif (arr.uniq.include?("\N") && !@arr_unique[i].include?("\N"))
+					@arr_unique[i].push("\N")	
+				elsif (arr.uniq.include?("") && !@arr_unique[i].include?(""))
+					@arr_unique[i].push("")
+				elsif (arr.uniq.include?(" ") && !@arr_unique[i].include?(" "))
+					@arr_unique[i].push(" ")
+				end				
 				arr.each do |field|
 					field_type = get_datatype(field)
 					count = @arr_details[i][field_type]
@@ -141,23 +153,54 @@ class ProcessCSV
 				end
 			end
 		end
-		puts @arr_unique
-		puts "\n\n"
-		return @arr_details	
+	end
+	def output_csv(filename, no_of_unique)
+		CSV.open(filename, "wb") do |csv|
+			csv << ["No of columns", @no_of_columns, "No of rows", @no_of_rows]
+			csv << []
+			csv <<["Id","Header", "Datatype", "No Of Distinct Values", "Min", "Max", "Empty Values", "Unique Values"]
+			for i in 0..@headers.length-1
+				if(@arr_unique[i].size > no_of_unique.to_i)
+					unique_count = no_of_unique + "+"
+					uniq_array = ["Can not be enum type"]
+				else
+					unique_count = @arr_unique[i].size
+					uniq_array = @arr_unique[i]
+				end
+				puts "\n\n #{@arr_unique[i]} \n\n"
+				sleep(5)
+				if(@arr_unique[i].include?(nil))
+					empty_value = "nil"
+				elsif(@arr_unique[i].include?("NULL"))
+					empty_value = "NULL"
+				elsif(@arr_unique[i].include?("\N"))
+					empty_value = "\N"
+				elsif(@arr_unique[i].include?(""))
+					empty_value = "NULL-Empty"
+				elsif(@arr_unique[i].include?(" "))
+					empty_value = " "
+				else
+					empty_value = "Not Empty"
+				end
+				csv << [i+1, @headers[i], @header_datatype[i], unique_count, @arr_details[i]["min_value"], @arr_details[i]["max_value"], empty_value, uniq_array.join(",")]
+			end
+		end
+		#puts @arr_unique
 	end
 end
 
 filename = ARGV[0]
 chunk_size = ARGV[1]
 no_of_unique = ARGV[2]
+output_file = ARGV[3]
 #check if the file exists
 if File::exists?(filename)
 	csv_process = ProcessCSV.new
 	csv_process.clean_line_endings(filename)
 	csv_process.get_header_length(filename)
 	csv_process.initial_data_type(filename,chunk_size)
-	array_details = csv_process.process_csv_file(filename, no_of_unique)
-	puts array_details
+	csv_process.process_csv_file(filename, no_of_unique)
+	csv_process.output_csv(output_file, no_of_unique)
 else
 	puts "invalid filename"
 end

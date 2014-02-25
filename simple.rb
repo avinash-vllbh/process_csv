@@ -1,4 +1,9 @@
-require 'date'
+require 'smarter_csv'
+
+total_chunks = SmarterCSV.process("testCSV.csv", {:chunk_size => 10, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
+				puts chunk
+			end
+
 =begin
 	
 rescue Exception => e
@@ -77,7 +82,7 @@ rescue Exception => e
 end
 
 puts columns
-=end
+
 def get_datatype(field)
 	if(Integer(field) rescue false)
 		return "int"
@@ -102,6 +107,6 @@ arr_details[0][test] = value+1
 
 puts arr_details
 #puts hash_datatype
-
+=end
 
 
