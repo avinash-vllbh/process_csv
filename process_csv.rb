@@ -1,5 +1,6 @@
 require 'optparse'
 require_relative './lib/csv_processor'
+require_relative './lib/col_seperator'
 
 options = {:input => nil, :output => "output.csv", :unique => 10, :chunk => 20}
 parser = OptionParser.new do |opts|
@@ -64,10 +65,23 @@ chunk_size = options[:chunk]
 no_of_unique = options[:unique]
 output_file = options[:output]
 
-#check if the file exists
+#Obtain the delimeter
+col_sep = ColSeperator.new
+delimiter = col_sep.get_delimiter(input_file)
+if delimiter == "\t"
+	puts "Delimiter of input file is Tab"
+else
+	puts "Delimiter of input file is #{delimiter}"
+end
+
 csv_process = CSVProcessor.new
-csv_process.clean_line_endings(input_file)
-csv_process.get_header_length(input_file)
-csv_process.initial_data_type(input_file,chunk_size)
-csv_process.process_csv_file(input_file, no_of_unique)
+csv_process.clean_line_endings(input_file,delimiter)
+csv_process.get_header_length(input_file,delimiter)
+csv_process.initial_data_type(input_file,chunk_size,delimiter)
+csv_process.process_csv_file(input_file, no_of_unique,delimiter)
 csv_process.output_csv(output_file, no_of_unique)
+
+
+
+
+

@@ -4,10 +4,10 @@ require 'smarter_csv'
 class CSVProcessor
 
 # To clean the line endings, make "\n" as standard.
-  def clean_line_endings(filename)
+  def clean_line_endings(filename,delimiter)
     begin
       csvwrite = CSV.open("test1CSV.csv", "wb")
-      CSV.foreach(filename) do |row|
+      CSV.foreach(filename, {:col_sep => delimiter, :quote_char => '"'}) do |row|
         csvwrite << row
       end
       puts "CSV file has been successfully cleaned"
@@ -32,10 +32,10 @@ class CSVProcessor
     return "string"
   end
 #To get the header row length
-  def get_header_length(filename)
+  def get_header_length(filename,delimiter)
     @no_of_columns = 0
     @no_of_rows = 0
-    CSV.foreach(filename) do |row|
+    CSV.foreach(filename, {:col_sep => delimiter, :quote_char => '"'}) do |row|
       if(@no_of_columns == 0)
         @no_of_columns = row.length
       else
@@ -45,17 +45,17 @@ class CSVProcessor
         end
       end
     end
-    #puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
+    puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
   end
 #To guess the data types based on a small chunk
-  def initial_data_type(filename,chunk)
+  def initial_data_type(filename,chunk,delimiter)
     @headers = Array.new
     @header_datatype = Array.new
     get_keys = false
     @arr_unique = Array.new{hash.new}
     #hash_datatype = {"int" => 0, "float" => 0, "date" => 0, "string" => 0}
     @arr_details = Array.new(@no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "string" => 0}}
-    total_chunks = SmarterCSV.process(filename, {:chunk_size => chunk, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
+    total_chunks = SmarterCSV.process(filename, {:col_sep => delimiter, :chunk_size => chunk, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
       if(get_keys == false)
         chunk.each do |row| 
           @headers = row.keys
@@ -103,10 +103,10 @@ class CSVProcessor
     #puts "\n\n\n"
   end
 #Function to process the csv file and display processed data
-  def process_csv_file(filename, no_of_unique)
+  def process_csv_file(filename, no_of_unique,delimiter)
     @arr_unique = Array.new{hash.new}
     @arr_details = Array.new(@no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "string" => 0, "max_value" => 0, "min_value" => 0}}
-    total_chunks = SmarterCSV.process(filename, {:chunk_size => 200, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
+    total_chunks = SmarterCSV.process(filename, {:col_sep => delimiter, :chunk_size => 200, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
       for i in 0..@headers.length-1
         arr = chunk.map{|x| x[@headers[i].to_sym]}
         if(@arr_unique[i].to_a.empty?)
