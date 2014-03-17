@@ -1,70 +1,115 @@
-require 'csv'
-require 'smarter_csv'
-=begin
-CSV.foreach("sample.csv") do |row|
-	test = row.to_s
-	puts test
-	count = test.scan(/(",)/)
-	puts count.size
-end
-=end
-class SQLStructure
-	def get_delimiter(filename)
-		delimiters = Array[",",";","\t",'\|']
-		line_num = 0
-		count = Array.new(3) {Array.new}
-		esc_count = 0
+	require 'csv'
+	require 'smarter_csv'
 
-		File.foreach(filename) do |line|
-			for i in 0..delimiters.length-1
-				line = line.to_s	
-				count[line_num][i] = line.scan(/(#{delimiters[i]})/).size != nil ? line.scan(/(#{delimiters[i]})/).size : 0
-				escaped = line.scan(/".*?"/)
-				esc_count = escaped.join.scan(/(#{delimiters[i]})/) != nil ? escaped.join.scan(/(#{delimiters[i]})/).size.to_i : 0
-				count[line_num][i] = count[line_num][i] - esc_count
-			end
-			#puts "#{line}\n #{count}\n #{line_num}"
-			line_num = line_num + 1
-			if line_num > 2
-				break
-			end
-		end
+	class FileNotFound < StandardError; end
+	class InvalidInput < StandardError; end
 
-		delimiter = {"," => 0, ";" => 0, "\t" => 0, "|" => 0}
-		i = 0
-		count.each do |arr|
-			if(delimiters[arr.index(arr.max)] == '\|')
-				value = delimiter["|"]
-				value = value + 1
-				delimiter["|"] = value
-			else
-				value = delimiter[delimiters[arr.index(arr.max)]] 
-				value = value + 1
-				delimiter[delimiters[arr.index(arr.max)]] = value
-			end
+	class String
+		def substr_count(needle)
+			needle = "\\#{needle}" if(needle == '|') # To escape inside regex
+			self.scan(/(#{needle})/).size
 		end
-		#print delimiter
-		max_delimiter = ","
-		max_value = -1
-		delimiter.each do |key, value|
-			if max_value < value
-				max_delimiter = key
-				max_value = value
-			end
-		end
-		return max_delimiter
 	end
-end
 
-=begin
-sql = SQLStructure.new
-delimiter = sql.get_delimiter("sample.csv")
+	class ColSeperator
 
-puts delimiter
+		def self.getting_contents_of_quoted_values(input)
+			input.scan(/".*?"/).join
+		end
 
+		def self.get_delimiter(filename_or_sample)
+			@line_num = 0
+			@count = []
+			if filename_or_sample.class == String
+				if File::exists?(filename_or_sample)
+		    		File.foreach(filename_or_sample) do |line|
+		    			self.count_occurances_delimiter(line)
+		    			@line_num = @line_num + 1
+		    			if @line_num == 5 # If input is a file, only top 5 rows considered for analysis
+		    				break
+		    			end
+		    		end
+		    		self.pick_max_occurance_delimiter
+		    	else
+		    		return FileNotFound.new
+		    	end
+	    	elsif filename_or_sample.class == Array
+	    		#@count = Array.new(filename_or_sample.size) {Array.new}
+	    		filename_or_sample.each do |line|
+	    			self.count_occurances_delimiter(line)
+	    			@line_num = @line_num + 1
+	    		end
+	    		self.pick_max_occurance_delimiter
+	    	else
+	    		return InvalidInput.new
+	    	end
 
-total_chunks = SmarterCSV.process("sample.csv", {:col_sep => delimiter, :chunk_size => 10, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
-				puts chunk
+	    end
+
+	    def self.count_occurances_delimiter(line)
+	    	#@delimiters = [",", ";", "\t", "|"] # regex-compatable-@delimiters
+	    	@delimiter = {"," => 0, ";" => 0, "\t" => 0, "|" => 0}
+	    	esc_count = 0
+	    	# for i in 0..@delimiters.length-1 # try each delimiter
+	    		@delimiter.each {|key, value|
+	    			line = line.to_s
+	    			ini_count = line.substr_count(key)
+	    			quoted_values = self.getting_contents_of_quoted_values(line)
+	    			esc_count = quoted_values.substr_count(key)
+	    			value = ini_count - esc_count
+	    		}
+				# line = line.to_s
+				# #@count[@line_num][i] = line.substr_count(@delimiters[i])
+				# ini_count = line.substr_count(@delimiters[i])
+				# quoted_values = self.getting_contents_of_quoted_values(line)
+				# esc_count = quoted_values.substr_count(@delimiters[i])
+				# #@count[@line_num][i] = @count[@line_num][i] - esc_count # dont count @delimiters that are in quotes
+				# delimiter[@delimiters[i]] = ini_count - esc_count
+			#end
+			@count.push(@delimiter)
+			puts "\n#{line}\n #{@count}\n\n"
+		end
+
+		def self.pick_max_occurance_delimiter
+
+			@delimiter.each_value { |val| val = 0 }
+			i = 0
+			@count.each do |hash|
+				arr = hash.values
+				value = @delimiter[hash.key(arr.max)]
+				value = value + 1
+				@delimiter[hash.key(arr.max)] = value
 			end
-=end
+			# @count.each do |arr|
+			# 	value = delimiter[@delimiters[arr.index(arr.max)]]
+			# 	value = value + 1
+			# 	delimiter[@delimiters[arr.index(arr.max)]] = value
+			# end
+			max_delimiter = ","
+			max_value = -1
+			@delimiter.each do |key, value|
+				if max_value < value
+					max_delimiter = key
+					max_value = value
+				end
+			end
+			return max_delimiter
+		end
+	end
 
+	test = ["Year,Make,Model,Description,Price", "1997,Ford,E350,\"ac, abs, moon\",\"3000.00\"", "1999,Chevy,\"Venture \"\"Extended Edition, Very Large\"\"\",,5000.00"]
+
+	# # sql =.new
+	delimiter =  ColSeperator.get_delimiter("../sample.csv")
+	if delimiter == "\t"
+		puts "Delimiter of input file is Tab"
+	else
+		puts "Delimiter of input file is #{delimiter}"
+	end
+
+	delimiter = ColSeperator.get_delimiter(test)
+	if delimiter == "\t"
+		puts "Delimiter in given input is Tab"
+	else
+		puts "Delimiter in given input is #{delimiter}"
+	end

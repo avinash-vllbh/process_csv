@@ -67,11 +67,11 @@ output_file = options[:output]
 
 #Obtain the delimeter
 col_sep = ColSeperator.new
-delimiter = col_sep.get_delimiter(input_file)
+delimiter = ColSeperator.get_delimiter_from_file(input_file)
 if delimiter == "\t"
-	puts "Delimiter of input file is Tab"
+	puts "Delimiter in given input is Tab"
 else
-	puts "Delimiter of input file is #{delimiter}"
+	puts "Delimiter in given input is #{delimiter}"
 end
 
 csv_process = CSVProcessor.new
