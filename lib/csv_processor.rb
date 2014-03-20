@@ -5,14 +5,42 @@ class CSVProcessor
 
 # To clean the line endings, make "\n" as standard.
   def clean_line_endings(filename,delimiter)
-    begin
-      csvwrite = CSV.open("test1CSV.csv", "wb")
-      CSV.foreach(filename, {:col_sep => delimiter, :quote_char => '"'}) do |row|
-        csvwrite << row
+    puts "Do you want replace any empty spaces or Null's or \\N with NULL?"
+    puts "Enter Yes or No"
+    replace = gets.chomp
+    replace = replace.upcase
+    puts replace
+    while replace != "YES" && replace != "NO" && replace != "N" && replace != "Y"
+      puts "Invalid input!! Enter either yes or no"
+      replace = gets.chomp
+      replace = replace.upcase
+    end
+    if replace == "YES" || replace == "Y"
+      begin
+        csvwrite = CSV.open("test1CSV.csv", "wb")
+        CSV.foreach(filename, {:col_sep => delimiter, :quote_char => '"'}) do |row|
+          row.each do |value|
+            if(value == nil || value == "\\N" || value == "nil")
+              replace_index = row.index(value)
+              row[replace_index] = "NULL"
+            end
+          end
+          csvwrite << row
+        end
+        puts "CSV file has been successfully cleaned"
+      rescue Exception => e
+        puts e
       end
-      puts "CSV file has been successfully cleaned"
-    rescue Exception => e
-      puts e
+    else
+      begin
+        csvwrite = CSV.open("test1CSV.csv", "wb")
+        CSV.foreach(filename, {:col_sep => delimiter, :quote_char => '"'}) do |row|
+          csvwrite << row
+        end
+        puts "CSV file has been successfully cleaned"
+      rescue Exception => e
+        puts e
+      end
     end
   end
 #To determine the data-type of an input field

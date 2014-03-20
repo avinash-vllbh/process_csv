@@ -8,6 +8,14 @@ class String
 			return splits.join
 		end
 	end
+
+###
+##	
+#Below class process the output.csv file from csv_processor.rb to prepare a create table statement.
+#Prepared SQL statements are compatible with POSTGRES SQL.
+#	
+##
+###
 class PreparedStatement
 	def prepare_statement(filename)		
 			tbl_name = "Input".downcase
@@ -32,9 +40,9 @@ class PreparedStatement
 						end
 					else
 						if line[6] == "Not Empty"
-							sql_string = sql_string+line[1]+" VARCHAR(#{line[5]}) NOT NULL, "
+							sql_string = sql_string+line[1]+" varchar NOT NULL, "
 						else
-							sql_string = sql_string+line[1]+" VARCHAR(#{line[5]}), "
+							sql_string = sql_string+line[1]+" varchar, "
 						end
 					end
 				end
