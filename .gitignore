@@ -1,8 +1,11 @@
-samples/
-test1CSV.csv
-Output.csv
-test_csv.rb
+lib/sample.csv
+lib/sampleCSV.csv
+output.csv
 sample.csv
 sampleCSV.csv
 simple.rb
+test1CSV.csv
+test_csv.rb
+samples/AllstarFull.csv
+samples/Appearances.csv
 Gemfile.lock

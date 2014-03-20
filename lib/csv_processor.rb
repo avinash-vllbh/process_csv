@@ -97,10 +97,6 @@ class CSVProcessor
       end
       @header_datatype.push(max_value_key)
     end
-    #puts @header_datatype
-    #puts "\n\n\n"
-    #puts @arr_details
-    #puts "\n\n\n"
   end
 #Function to process the csv file and display processed data
   def process_csv_file(filename, no_of_unique,delimiter)
@@ -157,13 +153,13 @@ class CSVProcessor
       csv <<["Id","Header", "Datatype", "No Of Distinct Values", "Min", "Max", "Empty Values", "Unique Values"]
       for i in 0..@headers.length-1
         if(@arr_unique[i].size > no_of_unique.to_i)
-          unique_count = no_of_unique + "+"
+          unique_count = no_of_unique.to_s + "+"
           uniq_array = ["Can not be enum type"]
         else
           unique_count = @arr_unique[i].size
           uniq_array = @arr_unique[i]
         end
-        puts "\n\n #{@arr_unique[i]} \n\n"
+        #puts "\n\n #{@arr_unique[i]} \n\n"
         if(@arr_unique[i].include?(nil))
           empty_value = "nil"
         elsif(@arr_unique[i].include?("NULL"))
