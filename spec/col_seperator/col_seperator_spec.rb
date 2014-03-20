@@ -15,4 +15,13 @@ describe ColSeperator do
 
   end
 
+  describe 'count_occurances_delimiter' do
+  	it '' do
+  	end
+  end
+  describe 'pick_max_occurance_delimiter' do
+  	it '' do
+  	end
+  end
+
 end

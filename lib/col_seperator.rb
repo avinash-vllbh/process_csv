@@ -17,60 +17,50 @@
 			input.scan(/".*?"/).join
 		end
 
-		def self.get_delimiter(filename_or_sample)
+		def get_delimiter(filename_or_sample)
 			@line_num = 0
 			@count = []
 			if filename_or_sample.class == String
 				if File::exists?(filename_or_sample)
 		    		File.foreach(filename_or_sample) do |line|
-		    			self.count_occurances_delimiter(line)
+		    			count_occurances_delimiter(line)
 		    			@line_num = @line_num + 1
 		    			if @line_num == 5 # If input is a file, only top 5 rows considered for analysis
 		    				break
 		    			end
 		    		end
-		    		self.pick_max_occurance_delimiter
+		    		pick_max_occurance_delimiter
 		    	else
 		    		return FileNotFound.new
 		    	end
 	    	elsif filename_or_sample.class == Array
-	    		#@count = Array.new(filename_or_sample.size) {Array.new}
 	    		filename_or_sample.each do |line|
-	    			self.count_occurances_delimiter(line)
+	    			count_occurances_delimiter(line)
 	    			@line_num = @line_num + 1
 	    		end
-	    		self.pick_max_occurance_delimiter
+	    		pick_max_occurance_delimiter
 	    	else
 	    		return InvalidInput.new
 	    	end
 
 	    end
 
-	    def self.count_occurances_delimiter(line)
-	    	#@delimiters = [",", ";", "\t", "|"] # regex-compatable-@delimiters
+	    def count_occurances_delimiter(line)
 	    	@delimiter = {"," => 0, ";" => 0, "\t" => 0, "|" => 0}
 	    	esc_count = 0
-	    	# for i in 0..@delimiters.length-1 # try each delimiter
 	    		@delimiter.each {|key, value|
 	    			line = line.to_s
 	    			ini_count = line.substr_count(key)
-	    			quoted_values = self.getting_contents_of_quoted_values(line)
+	    			quoted_values = ColSeperator.getting_contents_of_quoted_values(line)
 	    			esc_count = quoted_values.substr_count(key)
 	    			value = ini_count - esc_count
+	    			@delimiter[key] = value
 	    		}
-				# line = line.to_s
-				# #@count[@line_num][i] = line.substr_count(@delimiters[i])
-				# ini_count = line.substr_count(@delimiters[i])
-				# quoted_values = self.getting_contents_of_quoted_values(line)
-				# esc_count = quoted_values.substr_count(@delimiters[i])
-				# #@count[@line_num][i] = @count[@line_num][i] - esc_count # dont count @delimiters that are in quotes
-				# delimiter[@delimiters[i]] = ini_count - esc_count
-			#end
 			@count.push(@delimiter)
-			puts "\n#{line}\n #{@count}\n\n"
+			#puts "\n#{line}\n #{@count}\n\n"
 		end
 
-		def self.pick_max_occurance_delimiter
+		def pick_max_occurance_delimiter
 
 			@delimiter.each_value { |val| val = 0 }
 			i = 0
@@ -80,11 +70,6 @@
 				value = value + 1
 				@delimiter[hash.key(arr.max)] = value
 			end
-			# @count.each do |arr|
-			# 	value = delimiter[@delimiters[arr.index(arr.max)]]
-			# 	value = value + 1
-			# 	delimiter[@delimiters[arr.index(arr.max)]] = value
-			# end
 			max_delimiter = ","
 			max_value = -1
 			@delimiter.each do |key, value|
@@ -97,19 +82,20 @@
 		end
 	end
 
-	test = ["Year,Make,Model,Description,Price", "1997,Ford,E350,\"ac, abs, moon\",\"3000.00\"", "1999,Chevy,\"Venture \"\"Extended Edition, Very Large\"\"\",,5000.00"]
+	# col_sep = ColSeperator.new
 
-	# # sql =.new
-	delimiter =  ColSeperator.get_delimiter("../sample.csv")
-	if delimiter == "\t"
-		puts "Delimiter of input file is Tab"
-	else
-		puts "Delimiter of input file is #{delimiter}"
-	end
+	# #test = ["Year,Make,Model,Description,Price", "1997,Ford,E350,\"ac, abs, moon\",\"3000.00\"", "1999,Chevy,\"Venture \"\"Extended Edition, Very Large\"\"\",,5000.00"]
 
-	delimiter = ColSeperator.get_delimiter(test)
-	if delimiter == "\t"
-		puts "Delimiter in given input is Tab"
-	else
-		puts "Delimiter in given input is #{delimiter}"
-	end
+	# delimiter =  col_sep.get_delimiter("sample.csv")
+	# if delimiter == "\t"
+	# 	puts "Delimiter of input file is Tab"
+	# else
+	# 	puts "Delimiter of input file is #{delimiter}"
+	# end
+
+	# # delimiter = ColSeperator.get_delimiter(test)
+	# # if delimiter == "\t"
+	# # 	puts "Delimiter in given input is Tab"
+	# # else
+	# # 	puts "Delimiter in given input is #{delimiter}"
+	# # end

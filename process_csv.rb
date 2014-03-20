@@ -1,6 +1,7 @@
 require 'optparse'
 require_relative './lib/csv_processor'
 require_relative './lib/col_seperator'
+require_relative './lib/prepare_statement'
 
 options = {:input => nil, :output => "output.csv", :unique => 10, :chunk => 20}
 parser = OptionParser.new do |opts|
@@ -67,7 +68,7 @@ output_file = options[:output]
 
 #Obtain the delimeter
 col_sep = ColSeperator.new
-delimiter = ColSeperator.get_delimiter_from_file(input_file)
+delimiter = col_sep.get_delimiter(input_file)
 if delimiter == "\t"
 	puts "Delimiter in given input is Tab"
 else
@@ -80,6 +81,10 @@ csv_process.get_header_length(input_file,delimiter)
 csv_process.initial_data_type(input_file,chunk_size,delimiter)
 csv_process.process_csv_file(input_file, no_of_unique,delimiter)
 csv_process.output_csv(output_file, no_of_unique)
+
+prep_stat = PreparedStatement.new
+
+prep_stat.prepare_statement(output_file)
 
 
 
