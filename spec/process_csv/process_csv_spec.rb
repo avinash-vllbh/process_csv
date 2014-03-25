@@ -1,5 +1,5 @@
 
-require 'spec_helper'
+require 'csv_processor'
 
 describe CSVProcessor do 
   let (:csv_processor) { CSVProcessor.new }

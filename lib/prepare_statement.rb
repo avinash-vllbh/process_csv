@@ -28,7 +28,7 @@ class PreparedStatement
 				if line_no > 2
 					if line[2] == "int"
 						if line[6] == "Not Empty"
-							sql_string = sql_string+line[1]+" "+line[2].upcase+" NOT NULL, "
+							sql_string = sql_string+"#{line[1]} "+line[2].upcase+" NOT NULL, "
 						else
 							sql_string = sql_string+line[1]+" "+line[2].upcase+", "
 						end

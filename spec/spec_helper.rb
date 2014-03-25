@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'bundler/setup'
 require 'csv_processor'
+require 'col_seperator'
 
 Bundler.require(:default)
 

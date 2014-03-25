@@ -23,7 +23,8 @@
 			if filename_or_sample.class == String
 				if File::exists?(filename_or_sample)
 		    		File.foreach(filename_or_sample) do |line|
-		    			count_occurances_delimiter(line)
+		    			delimiters_for_line = count_occurances_delimiter(line)
+		    			@count.push(delimiters_for_line)
 		    			@line_num = @line_num + 1
 		    			if @line_num == 5 # If input is a file, only top 5 rows considered for analysis
 		    				break
@@ -35,7 +36,8 @@
 		    	end
 	    	elsif filename_or_sample.class == Array
 	    		filename_or_sample.each do |line|
-	    			count_occurances_delimiter(line)
+	    			delimiters_for_line = count_occurances_delimiter(line)
+		    		@count.push(delimiters_for_line)
 	    			@line_num = @line_num + 1
 	    		end
 	    		pick_max_occurance_delimiter
@@ -56,12 +58,11 @@
 	    			value = ini_count - esc_count
 	    			@delimiter[key] = value
 	    		}
-			@count.push(@delimiter)
+			return @delimiter
 			#puts "\n#{line}\n #{@count}\n\n"
 		end
 
 		def pick_max_occurance_delimiter
-
 			@delimiter.each_value { |val| val = 0 }
 			i = 0
 			@count.each do |hash|

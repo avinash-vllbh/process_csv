@@ -3,6 +3,23 @@ require 'smarter_csv'
 
 class CSVProcessor
 
+#To get the header row length
+  def get_header_length(filename,delimiter)
+    @no_of_columns = 0
+    @no_of_rows = 0
+    CSV.foreach(filename, {:col_sep => delimiter, :quote_char => '"'}) do |row|
+      if(@no_of_columns == 0)
+        @no_of_columns = row.length
+      else
+        @no_of_rows = @no_of_rows + 1
+        if(row.size != @no_of_columns)
+          puts "The file isn't square at row #{@no_of_rows+1}"
+        end
+      end
+    end
+    puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
+  end
+
 # To clean the line endings, make "\n" as standard.
   def clean_line_endings(filename,delimiter)
     puts "Do you want replace any empty spaces or Null's or \\N with NULL?"
@@ -59,22 +76,7 @@ class CSVProcessor
     end
     return "string"
   end
-#To get the header row length
-  def get_header_length(filename,delimiter)
-    @no_of_columns = 0
-    @no_of_rows = 0
-    CSV.foreach(filename, {:col_sep => delimiter, :quote_char => '"'}) do |row|
-      if(@no_of_columns == 0)
-        @no_of_columns = row.length
-      else
-        @no_of_rows = @no_of_rows + 1
-        if(row.size != @no_of_columns)
-          puts "The file isn't square at row #{@no_of_rows+1}"
-        end
-      end
-    end
-    puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
-  end
+
 #To guess the data types based on a small chunk
   def initial_data_type(filename,chunk,delimiter)
     @headers = Array.new
