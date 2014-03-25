@@ -1,7 +1,7 @@
 require 'optparse'
 require_relative './lib/csv_processor'
 require_relative './lib/col_seperator'
-require_relative './lib/prepare_statement'
+require_relative './lib/prepared_statement'
 
 options = {:input => nil, :output => "output.csv", :unique => 10, :chunk => 20}
 parser = OptionParser.new do |opts|
@@ -84,7 +84,8 @@ csv_process.output_csv(output_file, no_of_unique)
 
 prep_stat = PreparedStatement.new
 
-prep_stat.prepare_statement(output_file)
+sql_query_result = prep_stat.prepare_statement(output_file)
+puts sql_query_result
 
 
 
