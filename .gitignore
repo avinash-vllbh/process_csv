@@ -9,3 +9,5 @@ test_csv.rb
 samples/AllstarFull.csv
 samples/Appearances.csv
 Gemfile.lock
+sampleComma.csv
+sampleTab.csv
