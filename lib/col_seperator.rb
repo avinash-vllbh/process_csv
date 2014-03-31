@@ -82,21 +82,3 @@
 			return max_delimiter
 		end
 	end
-
-	# col_sep = ColSeperator.new
-
-	# #test = ["Year,Make,Model,Description,Price", "1997,Ford,E350,\"ac, abs, moon\",\"3000.00\"", "1999,Chevy,\"Venture \"\"Extended Edition, Very Large\"\"\",,5000.00"]
-
-	# delimiter =  col_sep.get_delimiter("sample.csv")
-	# if delimiter == "\t"
-	# 	puts "Delimiter of input file is Tab"
-	# else
-	# 	puts "Delimiter of input file is #{delimiter}"
-	# end
-
-	# # delimiter = ColSeperator.get_delimiter(test)
-	# # if delimiter == "\t"
-	# # 	puts "Delimiter in given input is Tab"
-	# # else
-	# # 	puts "Delimiter in given input is #{delimiter}"
-	# # end
