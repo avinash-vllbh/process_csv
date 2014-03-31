@@ -2,21 +2,26 @@ require 'optparse'
 require_relative './lib/csv_processor'
 require_relative './lib/col_seperator'
 require_relative './lib/prepared_statement'
+require_relative './lib/csv_cleaner'
 
 options = {:input => nil, :output => "output.csv", :unique => 10, :chunk => 20}
 parser = OptionParser.new do |opts|
 			opts.banner = "Usage: process_csv.rb [options]"
 
-			opts.on('-i', '--input input', 'Input file name') do |input|
-				options[:input] = input
+			opts.on('-i', '--input filename', 'Input file name') do |input|
+				options[:input] = input  # todo: be able to handle files not in the current directory
 			end
-			opts.on('-o', '--output output', 'Output file name') do |output|
+			#   another option to control the output of the structured file 
+			# opts.on('-s', '--output-structure filename', 'Output the file name') do |output|
+			# 	options[:output] = output
+			# end
+			opts.on('-o', '--output-cleaned filename', 'Output the cleaned csv file name, defaults to current driectory proccessed_(filename).csv ') do |output|
 				options[:output] = output
 			end
-			opts.on('-u', '--unique unique', 'No of Unique values you need') do |unique|
+			opts.on('-u', '--unique unique', 'No of Unique values you need, default: 10') do |unique|
 				options[:unique] = unique
 			end
-			opts.on('-c', '--chunk chunk', 'Chunk size for predecting datatypes') do |chunk|
+			opts.on('-c', '--chunk size', 'Chunk size for predecting datatypes, default: 64') do |chunk|
 				options[:chunk] = chunk
 			end
 			opts.on('-h', '--help', 'Displays Help') do
@@ -29,11 +34,9 @@ parser.parse!
 # Input validations
 filename = nil
 if options[:input] == nil
-	begin
-		print 'Enter a valid input file name: '
-		filename = gets.chomp
-		options[:input] = filename if File::exists?(filename)
-	end while not File::exists?(filename)
+	print " Requires a valid input file name! \n"
+	puts parser
+	exit
 end 
 
 flag = false
@@ -74,18 +77,21 @@ if delimiter == "\t"
 else
 	puts "Delimiter in given input is #{delimiter}"
 end
+csv_clean = CSVCleaner.new
+csv_clean.process_csv(input_file,delimiter)
+input_file = "processed_#{input_file}"
 
 csv_process = CSVProcessor.new
-csv_process.clean_line_endings(input_file,delimiter)
 csv_process.get_header_length(input_file,delimiter)
 csv_process.initial_data_type(input_file,chunk_size,delimiter)
 csv_process.process_csv_file(input_file, no_of_unique,delimiter)
 csv_process.output_csv(output_file, no_of_unique)
 
 prep_stat = PreparedStatement.new
-
-sql_query_result = prep_stat.prepare_statement(output_file)
+sql_query_result = prep_stat.tbl_prepare_statement(output_file)
+import_query = prep_stat.csv_import_statement(input_file,delimiter)
 puts sql_query_result
+puts import_query
 
 
 
