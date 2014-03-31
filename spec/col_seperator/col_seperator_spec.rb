@@ -46,11 +46,20 @@ describe ColSeperator do
   	end
   end
   describe 'pick_max_occurance_delimiter' do
-    #col_sep.instance_variable_set(:@count, [{","=>4,"|"=>2},{","=>2,"|"=>2},{","=>4,"\t"=>2}])
-  	let(:@count) {[{","=>4,";" => 0, "\t" => 0,"|"=>2},{","=>2,";" => 0, "\t" => 0,"|"=>2},{","=>4,";" => 0, "\t" => 0,"|"=>2}]}
-    let(:@delimiter) {{"," => 0, ";" => 0, "\t" => 0, "|" => 0}}
-    it 'can pick the delimiter with maximum occurance' do
-      expect(col_sep.pick_max_occurance_delimiter).to eq(",")
+    context 'given good data' do 
+      before do
+        col_sep.instance_variable_set(:@delimter, {"," => 0, ";" => 0, "\t" => 0, "|" => 0})
+    #  	let(:@count) {[{","=>4,";" => 0, "\t" => 0,"|"=>2},{","=>2,";" => 0, "\t" => 0,"|"=>2},{","=>4,";" => 0, "\t" => 0,"|"=>2}]}
+    #    let(:@delimiter) {{"," => 0, ";" => 0, "\t" => 0, "|" => 0}}
+      end
+      it 'can pick the delimiter with maximum occurance' do
+        col_sep.instance_variable_set(:@count, [{","=>4,"|"=>2},{","=>2,"|"=>2},{","=>4,"\t"=>2}])
+        expect(col_sep.pick_max_occurance_delimiter).to eq(",")
+      end
+      xit 'can pick a delimiter given crappy data' do
+        col_sep.instance_variable_set(:@count, [{","=>4,"|"=>4},{","=>4,"|"=>4},{","=>4,"\t"=>4}])
+        expect(col_sep.pick_max_occurance_delimiter).to eq(",")
+      end
     end
   end
 end
