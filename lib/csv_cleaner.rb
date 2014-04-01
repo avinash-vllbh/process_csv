@@ -1,8 +1,5 @@
 require 'csv'
-
-#Error handlers for easier testing in spec files
-
-class FileNotFound < StandardError; end
+require_relative 'error_handler'
 
 # ##
 # Performs below set of processing on input CSV file.
@@ -13,6 +10,7 @@ class FileNotFound < StandardError; end
 # -creates another file with file name prepended by 'processed_'
 # ##
 class CSVCleaner
+	
 	def cleaner_csv(filename,delimiter,processed_file_name)
 		#delimiter = "\\|" if delimiter == '|'
 		if File::exists?(filename)
@@ -119,7 +117,7 @@ class CSVCleaner
 
 	def replace_line_nulls(line)
 		line.each do |value|
-            if(value == nil || value == "\\N" || value == "nil")
+            if(value == nil || value == "\\N" || value == "nil" ||value == "")
               replace_index = line.index(value)
               line[replace_index] = "NULL"
             end

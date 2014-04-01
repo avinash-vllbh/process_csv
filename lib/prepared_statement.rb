@@ -1,6 +1,6 @@
 require 'csv'
 require 'english'
-class FileNotFound < StandardError; end
+require_relative 'error_handler'
 
 class String
 	#To extend the String class with support for camel casing

@@ -1,4 +1,3 @@
-
 require 'col_seperator'
 #require_relative '../../lib/col_seperator'
 

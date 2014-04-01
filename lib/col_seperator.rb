@@ -1,8 +1,6 @@
 	require 'csv'
 	require 'smarter_csv'
-
-	class FileNotFound < StandardError; end
-	class InvalidInput < StandardError; end
+	require_relative 'error_handler'
 
 	class String
 		def substr_count(needle)

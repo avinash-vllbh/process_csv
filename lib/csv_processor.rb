@@ -1,5 +1,6 @@
 require 'csv'
 require 'smarter_csv'
+require_relative 'error_handler'
 
 class CSVProcessor
 
