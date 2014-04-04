@@ -1,4 +1,5 @@
 require 'csv'
+require 'date'
 require 'smarter_csv'
 require_relative 'error_handler'
 
@@ -21,31 +22,86 @@ class CSVProcessor
     puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
   end
 
+###
+# To check for pattern of Date format after Date.parse is successfull
+# Date.parse(3000) => true which is not supposed to be true
+###
+def datetime_pattern(field)
+  pattern1 = field.scan(/[0-9]\//)
+  pattern2 = field.scan(/[0-9]\-/)
+  pattern3 = field.scan(/[0-9] [A-Z][a-z][a-z] [0-9]|[0-9]-[A-Z][a-z][a-z]-[0-9]|[0-9] [a-z][a-z][a-z] [0-9]|[0-9]-[a-z][a-z][a-z]-[0-9]/)
+  if(pattern1.size == 2||pattern2.size == 2||pattern3.size != 0)
+    return true
+  else
+    return false
+  end
+end
+###
 #To determine the data-type of an input field
+###
   def get_datatype(field)
     if(Integer(field) rescue false)
+      if field.class == Float
+        return "float"
+      end
       return "int"
     elsif(Float(field) rescue false)
       return "float"
-    elsif(Date.parse(field) rescue false)
-      pattern1 = field.scan(/[0-9]\//)
-      pattern2 = field.scan(/[0-9]\-/)
-      pattern3 = field.scan(/[0-9] [A-Z][a-z][a-z] [0-9]|[0-9]-[A-Z][a-z][a-z]-[0-9]|[0-9] [a-z][a-z][a-z] [0-9]|[0-9]-[a-z][a-z][a-z]-[0-9]/)
-      if(pattern1.size == 2||pattern2.size == 2||pattern3.size != 0)
-        return "date"
+    elsif(Date.parse(field) rescue false) 
+      if datetime_pattern(field)
+        if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
+          return "datetime"
+        else
+          return "date"
+        end
       end
+    elsif(Date.strptime(field, '%m/%d/%Y') rescue false)
+        if datetime_pattern(field) 
+          if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
+            return "datetime"
+          else
+              return "date"
+          end
+        end
+    elsif(Date.strptime(field, '%m-%d-%Y') rescue false)
+      if datetime_pattern(field)
+        if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
+          return "datetime"
+        else
+          return "date"
+        end
+      end
+    elsif(Date.strptime(field, '%m %d %Y') rescue false)
+      if datetime_pattern(field)
+        if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
+          return "datetime"
+        else
+          return "date"
+        end
+      end
+    # elsif(DateTime.parse(field) rescue false)
+    #     return "datetime"
+    #       # elsif(DateTime.strptime(field, '%m/%d/%Y %H:%M') rescue false)
+    #     return "datetime"
+    # elsif(DateTime.strptime(field, '%m/%d/%Y %H:%M:%S') rescue false)
+    #     return "datetime"
+    # elsif(DateTime.strptime(field, '%m-%d-%Y %H:%M') rescue false)
+    #     return "datetime"
+    # elsif(DateTime.strptime(field, '%m-%d-%Y %H:%M:%S') rescue false)
+    #     return "datetime"
     end
     return "string"
   end
-
+###
 #To guess the data types based on a small chunk
+###
   def initial_data_type(filename,chunk,delimiter)
     @headers = Array.new
     @header_datatype = Array.new
     get_keys = false
     @arr_unique = Array.new{hash.new}
     #hash_datatype = {"int" => 0, "float" => 0, "date" => 0, "string" => 0}
-    @arr_details = Array.new(@no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "string" => 0}}
+    @arr_details = Array.new(@no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "datetime" => 0, "string" => 0}}
     total_chunks = SmarterCSV.process(filename, {:col_sep => delimiter, :chunk_size => chunk, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
       if(get_keys == false)
         chunk.each do |row| 
@@ -77,6 +133,7 @@ class CSVProcessor
       break
     end
     #To prepare hash with datatypes of every column to decide on the intial datatypes
+    #puts @arr_details.inspect
     @arr_details.each do |hash|
       max_value = 0
       max_value_key = String.new
@@ -86,13 +143,19 @@ class CSVProcessor
           max_value_key = key
         end
       end
+      if max_value_key == "int"
+        if hash["float"] != 0
+          max_value_key = "float"
+        end
+      end
       @header_datatype.push(max_value_key)
     end
+    #puts @header_datatype.inspect
   end
 #Function to process the csv file and display processed data
   def process_csv_file(filename, no_of_unique,delimiter)
     @arr_unique = Array.new{hash.new}
-    @arr_details = Array.new(@no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "string" => 0, "max_value" => 0, "min_value" => 0}}
+    @arr_details = Array.new(@no_of_columns){{"int" => 0, "float" => 0, "date" => 0, "datetime" => 0, "string" => 0, "max_value" => 0, "min_value" => 0}}
     total_chunks = SmarterCSV.process(filename, {:col_sep => delimiter, :chunk_size => 200, :remove_empty_values => false, :remove_zero_values => false}) do |chunk|
       for i in 0..@headers.length-1
         arr = chunk.map{|x| x[@headers[i].to_sym]}
@@ -116,21 +179,23 @@ class CSVProcessor
           count = @arr_details[i][field_type]
           @arr_details[i][field_type] = count+1
           if(field != nil)
-            if(@header_datatype[i] == "int" || @header_datatype[i] == "float")
-              
-              if(@arr_details[i]["max_value"] < field)
-                @arr_details[i]["max_value"] = field
+            begin
+              if(@header_datatype[i] == "int" || @header_datatype[i] == "float")              
+                if(@arr_details[i]["max_value"] < field)
+                  @arr_details[i]["max_value"] = field
+                end
+                if(@arr_details[i]["min_value"] > field || @arr_details[i]["min_value"] == 0)
+                  @arr_details[i]["min_value"] = field
+                end
+              else
+                if(@arr_details[i]["max_value"] < field.to_s.length)
+                  @arr_details[i]["max_value"] = field.to_s.length
+                end
+                if(@arr_details[i]["min_value"] > field.to_s.length ||  @arr_details[i]["min_value"] == 0)
+                  @arr_details[i]["min_value"] = field.to_s.length
+                end
               end
-              if(@arr_details[i]["min_value"] > field || @arr_details[i]["min_value"] == 0)
-                @arr_details[i]["min_value"] = field
-              end
-            else
-              if(@arr_details[i]["max_value"] < field.to_s.length)
-                @arr_details[i]["max_value"] = field.to_s.length
-              end
-              if(@arr_details[i]["min_value"] > field.to_s.length ||  @arr_details[i]["min_value"] == 0)
-                @arr_details[i]["min_value"] = field.to_s.length
-              end
+            rescue Exception => e
             end
           end
         end

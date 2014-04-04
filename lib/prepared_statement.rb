@@ -57,11 +57,23 @@ class PreparedStatement
 			else
 				result = "#{column_name} integer"
 			end
+		elsif data_type == "float"
+			if empty_values == "Not Empty"
+				result = "#{column_name} real NOT NULL"
+			else
+				result = "#{column_name} real"
+			end
 		elsif data_type == "date"
 			if empty_values == "Not Empty"
-				result = "#{column_name} date NOT NULL, "
+				result = "#{column_name} date NOT NULL "
 			else
 				result = "#{column_name} date"
+			end
+		elsif data_type == "datetime"
+			if empty_values == "Not Empty"
+				result = "#{column_name} timestamp NOT NULL "
+			else
+				result = "#{column_name} timestamp"
 			end
 		else
 			if empty_values == "Not Empty"
