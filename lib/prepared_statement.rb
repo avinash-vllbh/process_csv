@@ -1,4 +1,5 @@
 require 'csv'
+require 'tco'
 require 'english'
 require_relative 'error_handler'
 
@@ -24,19 +25,24 @@ class PreparedStatement
 	def tbl_prepare_statement(output_filename, input_filename)		
 			tbl_name = File.basename(input_filename,".*")
 			tbl_name = tbl_name.gsub(/^processed_/,'')
-			sql_string = "CREATE TABLE #{tbl_name} ( "
+			tbl_name.slice!(/^new./)
+			pg_sql_string = "CREATE TABLE #{tbl_name} ( "
+			my_sql_string = "CREATE TABLE #{tbl_name} ( "
 		if File::exists?(output_filename)
 			CSV.foreach(output_filename) do |line|
 				if $INPUT_LINE_NUMBER > 3 #$ --> inbuilt ruby reference to the line number when reading a file
 					if line.size == 8
-						result = generate_column_sql_part(line)
-						sql_string <<result.chomp << ", "
+						pg_result,my_result = generate_column_sql_part(line)
+						pg_sql_string << pg_result.chomp << ", "
+						my_sql_string << my_result.chomp << ", "
 					end
 				end
 			end
-			sql_string = sql_string.chomp(", ")
-			sql_string << " );"
-			return sql_string
+			pg_sql_string = pg_sql_string.chomp(", ")
+			my_sql_string = my_sql_string.chomp(", ")
+			pg_sql_string << " );"
+			my_sql_string << " );"
+			return my_sql_string,pg_sql_string
 		else
 			return FileNotFound.new
 		end
@@ -53,51 +59,66 @@ class PreparedStatement
 		empty_values = line[6]
 		if data_type == "int"
 			if empty_values == "Not Empty"
-				result = "#{column_name} integer NOT NULL"
+				pg_result = "#{column_name} integer NOT NULL"
+				my_result = "#{column_name} INT NOT NULL"
 			else
-				result = "#{column_name} integer"
+				pg_result = "#{column_name} integer"
+				my_result = "#{column_name} INT"
 			end
 		elsif data_type == "float"
 			if empty_values == "Not Empty"
-				result = "#{column_name} real NOT NULL"
+				pg_result = "#{column_name} real NOT NULL"
+				my_result = "#{column_name} FLOAT NOT NULL"
 			else
-				result = "#{column_name} real"
+				pg_result = "#{column_name} real"
+				my_result = "#{column_name} FLOAT"
 			end
 		elsif data_type == "date"
 			if empty_values == "Not Empty"
-				result = "#{column_name} date NOT NULL "
+				pg_result = "#{column_name} date NOT NULL "
+				my_result = "#{column_name} date NOT NULL "
 			else
-				result = "#{column_name} date"
+				pg_result = "#{column_name} date"
+				my_result = "#{column_name} date"
 			end
 		elsif data_type == "datetime"
 			if empty_values == "Not Empty"
-				result = "#{column_name} timestamp NOT NULL "
+				pg_result = "#{column_name} timestamp NOT NULL "
+				my_result = "#{column_name} timestamp NOT NULL "
 			else
-				result = "#{column_name} timestamp"
+				pg_result = "#{column_name} timestamp"
+				my_result = "#{column_name} timestamp NOT NULL "
 			end
 		else
 			if empty_values == "Not Empty"
-				result = "#{column_name} varchar NOT NULL"
+				pg_result = "#{column_name} varchar NOT NULL"
+				my_result = "#{column_name} varchar NOT NULL"
 			else
-				result = "#{column_name} varchar"
+				pg_result = "#{column_name} varchar"
+				my_result = "#{column_name} varchar"
 			end
 		end
-		return result
+		return pg_result,my_result
 	end
 		
 	# returns the postgres-sql commands to load the CSV file into database as a new table with file name as table name
 	# csv_import_statement("processed_sample.csv",",")
 	# 
-	def csv_import_statement(input_filename,delimiter)
+	def csv_import_statement(input_filename,delimiter,skip)
+		
 		#LOAD DATA INFILE '/tmp/test.txt' INTO TABLE test IGNORE 1 LINES;
-		file = "#{input_filename}"
-		puts file
+		file = File.absolute_path(input_filename)
+		#puts file
 		input_filename.slice!(/^processed_/)
 		tbl_name = File.basename(input_filename,".*")
-		import_statement = "LOAD DATA INFILE #{file} INTO TABLE #{tbl_name} "+
+		tbl_name.slice!(/^new./)
+		skip = 1 if skip == 0
+		my_import_statement = "LOAD DATA INFILE #{file} INTO TABLE #{tbl_name} "+
 							"FIELDS TERMINATED BY '#{delimiter}' "+
 							"ENCLOSED BY '\"' "+
 							"LINES TERMINATED BY '\\n' "+
-							"IGNORE 1 LINES;"
+							"IGNORE #{skip} LINES;"
+		pg_import_statement = "COPY #{tbl_name} FROM '#{file}' HEADER DELIMITER '#{delimiter}' CSV;"
+		return my_import_statement,pg_import_statement
 	end
 end
