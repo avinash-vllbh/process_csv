@@ -1,6 +1,7 @@
 require 'csv'
 require 'date'
 require 'smarter_csv'
+require 'tco'
 require_relative 'error_handler'
 
 class CSVProcessor
@@ -15,11 +16,12 @@ class CSVProcessor
       else
         @no_of_rows = @no_of_rows + 1
         if(row.size != @no_of_columns)
+          puts row
           puts "The file isn't square at row #{@no_of_rows+1}"
         end
       end
     end
-    puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}"
+    puts "Total No of rows: #{@no_of_rows} and No of columns: #{@no_of_columns}".fg("#ffff00")
   end
 
 ###
@@ -29,8 +31,9 @@ class CSVProcessor
 def datetime_pattern(field)
   pattern1 = field.scan(/[0-9]\//)
   pattern2 = field.scan(/[0-9]\-/)
-  pattern3 = field.scan(/[0-9] [A-Z][a-z][a-z] [0-9]|[0-9]-[A-Z][a-z][a-z]-[0-9]|[0-9] [a-z][a-z][a-z] [0-9]|[0-9]-[a-z][a-z][a-z]-[0-9]/)
-  if(pattern1.size == 2||pattern2.size == 2||pattern3.size != 0)
+  pattern3 = field.scan(/[0-9] /)
+  pattern4 = field.scan(/[0-9] [A-Z][a-z][a-z] [0-9]|[0-9]-[A-Z][a-z][a-z]-[0-9]|[0-9] [a-z][a-z][a-z] [0-9]|[0-9]-[a-z][a-z][a-z]-[0-9]/)
+  if(pattern1.size == 2||pattern2.size == 2||pattern3.size == 2||pattern4.size != 0)
     return true
   else
     return false
@@ -40,14 +43,20 @@ end
 #To determine the data-type of an input field
 ###
   def get_datatype(field)
-    if(Integer(field) rescue false)
-      if field.class == Float
+    #Remove if field has any comma's for int and float rep
+    if field != nil && field.class == String
+      num = field.gsub(/,/,'')
+    else
+      num = field
+    end
+    if(Integer(num) rescue false)
+      if num.class == Float
         return "float"
       end
       return "int"
-    elsif(Float(field) rescue false)
+    elsif(Float(num) rescue false)
       return "float"
-    elsif(Date.parse(field) rescue false) 
+    elsif(Date.parse(field) or Date.strptime(field, '%m/%d/%Y') or Date.strptime(field, '%m-%d-%Y') or Date.strptime(field, '%m %d %Y') rescue false)
       if datetime_pattern(field)
         if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
           return "datetime"
@@ -55,40 +64,6 @@ end
           return "date"
         end
       end
-    elsif(Date.strptime(field, '%m/%d/%Y') rescue false)
-        if datetime_pattern(field) 
-          if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
-            return "datetime"
-          else
-              return "date"
-          end
-        end
-    elsif(Date.strptime(field, '%m-%d-%Y') rescue false)
-      if datetime_pattern(field)
-        if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
-          return "datetime"
-        else
-          return "date"
-        end
-      end
-    elsif(Date.strptime(field, '%m %d %Y') rescue false)
-      if datetime_pattern(field)
-        if field =~ /:/ # To check if the field contains any pattern for Hours:minutes
-          return "datetime"
-        else
-          return "date"
-        end
-      end
-    # elsif(DateTime.parse(field) rescue false)
-    #     return "datetime"
-    #       # elsif(DateTime.strptime(field, '%m/%d/%Y %H:%M') rescue false)
-    #     return "datetime"
-    # elsif(DateTime.strptime(field, '%m/%d/%Y %H:%M:%S') rescue false)
-    #     return "datetime"
-    # elsif(DateTime.strptime(field, '%m-%d-%Y %H:%M') rescue false)
-    #     return "datetime"
-    # elsif(DateTime.strptime(field, '%m-%d-%Y %H:%M:%S') rescue false)
-    #     return "datetime"
     end
     return "string"
   end
@@ -148,6 +123,7 @@ end
           max_value_key = "float"
         end
       end
+      max_value_key = "string" if hash["string"] != 0
       @header_datatype.push(max_value_key)
     end
     #puts @header_datatype.inspect
@@ -202,9 +178,16 @@ end
       end
     end
   end
-  def output_csv(filename, no_of_unique)
+  def output_csv(filename,delimiter,no_of_unique,replace_nulls,replace_quotes)
     CSV.open(filename, "wb") do |csv|
-      csv << ["No of columns", @no_of_columns, "No of rows", @no_of_rows]
+      csv << ["Metadata of file"]
+      csv << ["No of rows", @no_of_rows]
+      csv << ["No of columns", @no_of_columns]
+      csv << ["Record delimiter", delimiter]
+      csv << []
+      csv << ["Data Manipulations on file"]
+      csv << ["Replace empty, null's, /N, NAN's with NULL", replace_nulls]
+      csv << ["Replace single quotes with Double quotes", replace_quotes]
       csv << []
       csv <<["Id","Header", "Datatype", "No Of Distinct Values", "Min", "Max", "Empty Values", "Unique Values"]
       for i in 0..@headers.length-1
