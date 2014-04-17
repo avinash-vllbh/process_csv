@@ -1,4 +1,5 @@
 require 'csv'
+require 'tco'
 require_relative 'error_handler'
 
 # ##
@@ -11,40 +12,14 @@ require_relative 'error_handler'
 # ##
 class CSVCleaner
 	
-	def cleaner_csv(filename,delimiter,processed_file_name,skip_lines)
+	def cleaner_csv(filename,delimiter,processed_file_name,skip_lines,replace_nulls,replace_quotes)
 		skip_lines = skip_lines.to_i
 		if File::exists?(filename)
 			output = processed_file_name
 			csvwrite = CSV.open(output, "wb", {:col_sep => delimiter})
-
-		    #Check if user wants to replace empty spaces null references to NULL
-			puts "Do you want replace any empty spaces or Null's or \\N or NAN with NULL?"
-			puts "Enter Yes or No"
-			replace_nulls = gets.chomp.upcase
-			replace_nulls = "YES" if replace_nulls == "Y"
-		     replace_nulls = "NO" if replace_nulls == "N"
-			while replace_nulls != "YES" && replace_nulls != "NO"
-		      puts "Invalid input!! Enter either yes or no"
-		      replace_nulls = gets.chomp.upcase
-		      replace_nulls = "YES" if replace_nulls == "Y"
-		      replace_nulls = "NO" if replace_nulls == "N"
-		    end
-
-		    #check if user wants to convert single quotes to double quotes
-		    puts "Do you want to convert single quotes to double quotes"
-			puts "Enter Yes or No"
-			replace_quotes = gets.chomp.upcase
-			replace_quotes = "YES" if replace_quotes == "Y"
-		      replace_quotes = "NO" if replace_quotes == "N"
-			while replace_quotes != "YES" && replace_quotes != "NO" && replace_quotes != "N" && replace_quotes != "Y"
-		      puts "Invalid input!! Enter either yes or no"
-		      replace_quotes = gets.chomp.upcase
-		      replace_quotes = "YES" if replace_quotes == "Y"
-		      replace_quotes = "NO" if replace_quotes == "N"
-		    end
-
 		    if(replace_nulls == "YES" && replace_quotes == "YES")
 				File.foreach(filename) do |line|
+					#puts line
 					if skip_lines > 0
 						skip_lines = skip_lines - 1
 					else
@@ -52,7 +27,7 @@ class CSVCleaner
 						begin
 							line = CSV.parse_line(line, {:col_sep => delimiter})
 						rescue CSV::MalformedCSVError => error
-							puts error
+							puts "#{error}".fg("#ff0000")
 							puts line
 							puts "Please correct the above line and re-enter"
 							line = gets.chomp
@@ -72,7 +47,7 @@ class CSVCleaner
 						begin
 							line = CSV.parse_line(line, {:col_sep => delimiter})
 						rescue CSV::MalformedCSVError => error
-							puts error
+							puts "#{error}".fg("#ff0000")
 							puts line
 							puts "Please correct the above line and re-enter"
 							line = gets.chomp
@@ -91,7 +66,7 @@ class CSVCleaner
 						begin
 							line = CSV.parse_line(line, {:col_sep => delimiter})
 						rescue CSV::MalformedCSVError => error
-							puts error
+							puts "#{error}".fg("#ff0000")
 							puts line
 							puts "Please correct the above line and re-enter"
 							line = gets.chomp
@@ -134,5 +109,17 @@ class CSVCleaner
         end
         return line
 	end
-	
+
+	def clean_line_endings(in_filename,out_filename)
+		write = File.open(out_filename, "wb:UTF-8")
+		File.open(in_filename, "r") do |file|
+			file.each_char { |ch| 
+				if ch == "\r"
+					ch = "\n"
+				end
+				write << ch
+			}
+		end
+		write.close
+	end
 end
