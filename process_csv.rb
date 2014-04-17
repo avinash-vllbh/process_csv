@@ -5,7 +5,7 @@ require_relative './lib/col_seperator'
 require_relative './lib/prepared_statement'
 require_relative './lib/csv_cleaner'
 
-options = {:input => nil, :metadata_output => nil, :processed_input => nil, :unique => 10, :chunk => 20, :skip => 0, :database => "P", :quote_convert => "YES", :replace_nulls => "NO"}
+options = {:input => nil, :metadata_output => nil, :processed_input => nil, :unique => 10, :chunk => 20, :skip => 0, :database => nil, :quote_convert => "YES", :replace_nulls => "NO"}
 parser = OptionParser.new do |opts|
 			opts.banner = "Usage: process_csv.rb [options]"
 
@@ -27,7 +27,7 @@ parser = OptionParser.new do |opts|
 			opts.on('-s', '--skip lines', 'skip the number of lines at the top, default: 0') do |skip|
 				options[:skip] = skip
 			end
-			opts.on('-d', '--database type', 'MySQL or Postgres, Options: M or P, default: P') do |database_type|
+			opts.on('-d', '--database type', 'MySQL or Postgres, Options: M or P, default: nil(print nothing)') do |database_type|
 				options[:database] = database_type.upcase
 			end
 			opts.on('-q', '--quotes conversion', 'Convert single quotes to double quotes, options: yes or no, default: yes') do |quote_convert|
@@ -126,18 +126,22 @@ end
 
 if File::exists?(input_file)
 
-	if(File.extname(input_file) == ".csv" || File.extname(input_file) == ".dat")
+	if(File.extname(input_file) == ".csv" || File.extname(input_file) == ".tsv" || File.extname(input_file) == ".dat")
 
-		#puts File.basename(input_file)
-		#puts File.absolute_path(input_file)
 		if options[:metadata_output] == nil
 
 			output_file = Dir.pwd+"/"+"metadata_"+File.basename(input_file)
+			if File::exists?(output_file)
+				output_file = Dir.pwd+"/"+Time.new.strftime("%Y%m%d%H%M%S")+"_metadata_"+File.basename(input_file)
+			end
 		else
 			output_file = options[:metadata_output]
 		end
 		if options[:processed_input] == nil
 			processed_file_name = "processed_"+File.basename(input_file)
+			if File::exists?(processed_file_name)
+				processed_file_name = Dir.pwd+"/"+Time.new.strftime("%Y%m%d%H%M%S")+"_processed_"+File.basename(processed_file_name)
+			end
 		else
 			processed_file_name = options[:processed_input]
 		end
@@ -189,7 +193,7 @@ if File::exists?(input_file)
 			puts "MySQL".fg("#ff0000")
 			puts my_sql_query
 			puts my_import_query
-		else
+		elsif options[:database] == "P"
 			puts "PostgresSQL".fg("#ff0000")
 			puts pg_sql_query
 			puts pg_import_query
