@@ -5,7 +5,7 @@ require_relative './lib/col_seperator'
 require_relative './lib/prepared_statement'
 require_relative './lib/csv_cleaner'
 
-options = {:input => nil, :metadata_output => nil, :processed_input => nil, :unique => 10, :chunk => 20, :skip => 0, :database => nil, :quote_convert => "YES", :replace_nulls => "NO"}
+options = {:input => nil, :metadata_output => nil, :processed_input => nil, :unique => 10, :chunk => 20, :skip => 0, :database => nil, :quote_convert => "YES", :replace_nulls => "YES"}
 parser = OptionParser.new do |opts|
 			opts.banner = "Usage: process_csv.rb [options]"
 

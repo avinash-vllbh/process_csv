@@ -23,20 +23,23 @@ class CSVCleaner
 					if skip_lines > 0
 						skip_lines = skip_lines - 1
 					else
-						line = replace_line_single_quotes(line,delimiter)
-						begin
-							line = CSV.parse_line(line, {:col_sep => delimiter})
-						rescue CSV::MalformedCSVError => error
-							puts "#{error}".fg("#ff0000")
-							puts line
-							puts "Please correct the above line and re-enter"
-							line = gets.chomp
-							line = CSV.parse_line(line, {:col_sep => delimiter})
+						#Check if the line is empty
+						if line.length > 1
+							line = replace_line_single_quotes(line,delimiter)
+							begin
+								line = CSV.parse_line(line, {:col_sep => delimiter})
+							rescue CSV::MalformedCSVError => error
+								puts "#{error}".fg("#ff0000")
+								puts line
+								puts "Please correct the above line and re-enter"
+								line = gets.chomp
+								line = CSV.parse_line(line, {:col_sep => delimiter})
+							end
+							#line = replace_line_endings(line)
+							line = replace_line_nulls(line)
+							#line = remove_quotes_around_numbers(line)
+							csvwrite << line
 						end
-						#line = replace_line_endings(line)
-						line = replace_line_nulls(line)
-						#line = remove_quotes_around_numbers(line)
-						csvwrite << line
 					end
 				end
 			elsif(replace_nulls == "YES" && replace_quotes == "NO")
@@ -44,17 +47,19 @@ class CSVCleaner
 					if skip_lines > 0
 						skip_lines = skip_lines - 1
 					else
-						begin
-							line = CSV.parse_line(line, {:col_sep => delimiter})
-						rescue CSV::MalformedCSVError => error
-							puts "#{error}".fg("#ff0000")
-							puts line
-							puts "Please correct the above line and re-enter"
-							line = gets.chomp
-							line = CSV.parse_line(line, {:col_sep => delimiter})
+						if line.length > 1
+							begin
+								line = CSV.parse_line(line, {:col_sep => delimiter})
+							rescue CSV::MalformedCSVError => error
+								puts "#{error}".fg("#ff0000")
+								puts line
+								puts "Please correct the above line and re-enter"
+								line = gets.chomp
+								line = CSV.parse_line(line, {:col_sep => delimiter})
+							end
+							line = replace_line_nulls(line)
+							csvwrite << line
 						end
-						line = replace_line_nulls(line)
-						csvwrite << line
 					end
 				end
 			else
@@ -62,17 +67,19 @@ class CSVCleaner
 					if skip_lines > 0
 						skip_lines = skip_lines - 1
 					else
-						line = replace_line_single_quotes(line,delimiter)
-						begin
-							line = CSV.parse_line(line, {:col_sep => delimiter})
-						rescue CSV::MalformedCSVError => error
-							puts "#{error}".fg("#ff0000")
-							puts line
-							puts "Please correct the above line and re-enter"
-							line = gets.chomp
-							line = CSV.parse_line(line, {:col_sep => delimiter})
+						if line.length > 1
+							line = replace_line_single_quotes(line,delimiter)
+							begin
+								line = CSV.parse_line(line, {:col_sep => delimiter})
+							rescue CSV::MalformedCSVError => error
+								puts "#{error}".fg("#ff0000")
+								puts line
+								puts "Please correct the above line and re-enter"
+								line = gets.chomp
+								line = CSV.parse_line(line, {:col_sep => delimiter})
+							end
+							csvwrite << line
 						end
-						csvwrite << line
 					end
 				end
 			end
@@ -112,12 +119,24 @@ class CSVCleaner
 
 	def clean_line_endings(in_filename,out_filename)
 		write = File.open(out_filename, "wb:UTF-8")
-		File.open(in_filename, "r") do |file|
+		carriage_return = false
+		File.open(in_filename, "rb") do |file|
 			file.each_char { |ch| 
-				if ch == "\r"
-					ch = "\n"
+				if carriage_return == true
+					if ch == "\n"
+						write << ch
+					else
+						write << "\n"
+						write << ch.encode!('UTF-8', :invalid => :replace, :undef => :replace, :replace => '??')
+					end
+					carriage_return = false
+				else
+					if ch == "\r"
+						carriage_return = true
+					else
+						write << ch.encode!('UTF-8', :invalid => :replace, :undef => :replace, :replace => '??')
+					end
 				end
-				write << ch
 			}
 		end
 		write.close
