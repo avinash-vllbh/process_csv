@@ -86,10 +86,10 @@ else
 	end
 end
 #To verify the skip_lines argument data integrity
-if options[:skip] >= 0
+if Integer(options[:skip]) >= 0
 	skip_lines = options[:skip]
 else
-	while options[:skip] >= 0
+	while Integer(options[:skip]) >= 0
 		puts "Wrong input for skip lines! Enter a positive integer"
 		options[:skip] = gets.chomp
 	end
@@ -177,7 +177,7 @@ if File::exists?(input_file)
 
 		prep_stat = PreparedStatement.new
 		my_sql_query,pg_sql_query = prep_stat.tbl_prepare_statement(output_file,input_file)
-		my_import_query,pg_import_query = prep_stat.csv_import_statement(processed_file_name,delimiter,skip_lines)
+		my_import_query,pg_import_query = prep_stat.csv_import_statement(processed_file_name,delimiter)
 
 		CSV.open(output_file, "a+") do |csv|
 			csv << []

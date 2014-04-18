@@ -104,7 +104,7 @@ class PreparedStatement
 	# returns the postgres-sql commands to load the CSV file into database as a new table with file name as table name
 	# csv_import_statement("processed_sample.csv",",")
 	# 
-	def csv_import_statement(input_filename,delimiter,skip)
+	def csv_import_statement(input_filename,delimiter)
 		
 		#LOAD DATA INFILE '/tmp/test.txt' INTO TABLE test IGNORE 1 LINES;
 		file = File.absolute_path(input_filename)
@@ -112,12 +112,12 @@ class PreparedStatement
 		input_filename.slice!(/^processed_/)
 		tbl_name = File.basename(input_filename,".*")
 		tbl_name.slice!(/^new./)
-		skip = 1 if skip == 0
+		#skip = 1 if skip == 0
 		my_import_statement = "LOAD DATA INFILE #{file} INTO TABLE #{tbl_name} "+
 							"FIELDS TERMINATED BY '#{delimiter}' "+
 							"ENCLOSED BY '\"' "+
 							"LINES TERMINATED BY '\\n' "+
-							"IGNORE #{skip} LINES;"
+							"IGNORE 1 LINES;"
 		pg_import_statement = "COPY #{tbl_name} FROM '#{file}' HEADER DELIMITER '#{delimiter}' CSV;"
 		return my_import_statement,pg_import_statement
 	end
