@@ -102,27 +102,21 @@ no_of_unique = options[:unique]
 quotes_convert = options[:quote_convert]
 replace_nulls = options[:replace_nulls]
 
-replace_nulls = "YES" if replace_nulls == ""
-replace_nulls = "YES" if replace_nulls == "Y"
-replace_nulls = "NO" if replace_nulls == "N"
-while replace_nulls != "YES" && replace_nulls != "NO"
-	puts "Invalid input!! Enter either (Yes/no)".fg("#ff0000")
-	replace_nulls = gets.chomp.upcase
-	replace_nulls = "YES" if replace_nulls == ""
-	replace_nulls = "YES" if replace_nulls == "Y"
-	replace_nulls = "NO" if replace_nulls == "N"
+def check_valid_input(input_field)
+	input_field = "YES" if input_field == ""
+	input_field = "YES" if input_field == "Y"
+	input_field = "NO" if input_field == "N"
+	while input_field != "YES" && input_field != "NO"
+		puts "Invalid input!! Enter either (Yes/no)".fg("#ff0000")
+		input_field = gets.chomp.upcase
+		input_field = "YES" if input_field == ""
+		input_field = "YES" if input_field == "Y"
+		input_field = "NO" if input_field == "N"
+	end
+	return input_field
 end
-quotes_convert = "YES" if quotes_convert == ""
-quotes_convert = "YES" if quotes_convert == "Y"
-quotes_convert = "NO" if quotes_convert == "N"
-while quotes_convert != "YES" && quotes_convert != "NO"
-	puts "Invalid input!! Enter either (Yes/no)".fg("#ff0000")
-	quotes_convert = gets.chomp.upcase
-	quotes_convert = "YES" if quotes_convert == ""
-	quotes_convert = "YES" if quotes_convert == "Y"
-	quotes_convert = "NO" if quotes_convert == "N"
-end
-
+replace_nulls = check_valid_input(replace_nulls)
+quotes_convert = check_valid_input(quotes_convert)
 
 if File::exists?(input_file)
 
@@ -146,17 +140,19 @@ if File::exists?(input_file)
 			processed_file_name = options[:processed_input]
 		end
 
+		CSV.open(output_file, "a+") do |csv|
+			csv << ["orig_csv_filename",File.basename(input_file)]
+			csv << ["orig_file_size", File.size(input_file)]
+			csv << ["new_csv_filename", File.basename(processed_file_name)]			
+		end
 		#To clean the line endings
 		#Replace CR (\r) used as line endings with \n
 		file_base = File.basename(input_file)
 		file_dir = File.dirname(processed_file_name)
 		new_input_file = "#{file_dir}/new.#{file_base}".to_s
-		#puts new_input_file
 		csv_clean = CSVCleaner.new
 		csv_clean.clean_line_endings(input_file,new_input_file)
 		input_file = new_input_file
-		#puts output_file
-		#Obtain the delimeter
 		input_file = new_input_file
 		col_sep = ColSeperator.new
 		delimiter = col_sep.get_delimiter(input_file)
@@ -173,6 +169,9 @@ if File::exists?(input_file)
 		csv_process.get_header_length(processed_file_name,delimiter)
 		csv_process.initial_data_type(processed_file_name,chunk_size,delimiter)
 		csv_process.process_csv_file(processed_file_name, no_of_unique,delimiter)
+		CSV.open(output_file, "a+") do |csv|
+			csv << ["new_file_size", File.size(processed_file_name)]	
+		end
 		csv_process.output_csv(output_file, delimiter,no_of_unique,replace_nulls,quotes_convert)
 
 		prep_stat = PreparedStatement.new
@@ -200,7 +199,7 @@ if File::exists?(input_file)
 		end
 
 		#to delete the new.input file created during the process
-		#File.delete(input_file)
+		File.delete(input_file)
 	else
 		puts "Please export the input file to CSV or TSV".fg("#ff0000")
 	end

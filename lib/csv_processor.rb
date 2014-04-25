@@ -179,11 +179,12 @@ end
     end
   end
   def output_csv(filename,delimiter,no_of_unique,replace_nulls,replace_quotes)
-    CSV.open(filename, "wb") do |csv|
-      csv << ["Metadata of file"]
+    CSV.open(filename, "a+") do |csv|
       csv << ["No of rows", @no_of_rows]
       csv << ["No of columns", @no_of_columns]
       csv << ["Record delimiter", delimiter]
+      csv << ["Record enclosed by", "\""]
+      csv << ["Record terminated with", "\\n"]
       csv << []
       csv << ["Data Manipulations on file"]
       csv << ["Replace empty, null's, /N, NAN's with NULL", replace_nulls]
